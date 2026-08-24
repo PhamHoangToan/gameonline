@@ -27,6 +27,8 @@
     --letter-d:#ff6f9c;
     --lifeline:#9a6bff;
     --lifeline-dark:#6a3fd1;
+    --addtime:#22d3ee;
+    --addtime-dark:#0e7490;
   }
 
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -252,6 +254,14 @@
   }
   #btn-5050:disabled{ box-shadow:0 6px 0 rgba(106,63,209,0.3); }
   #btn-5050 .wifi-icon{ width:1.15em; height:1.15em; }
+  #btn-addtime{
+    display:flex; align-items:center; gap:.55em;
+    color:#062226;
+    background:linear-gradient(180deg, #a5f3fc, var(--addtime));
+    box-shadow:0 6px 0 var(--addtime-dark);
+  }
+  #btn-addtime:disabled{ box-shadow:0 6px 0 rgba(14,116,144,0.3); }
+  #btn-addtime .wifi-icon{ width:1.15em; height:1.15em; }
 
   /* ---------- END SCREEN ---------- */
   #end-screen{ text-align:center; gap:clamp(16px,2.2vh,28px); }
@@ -330,10 +340,16 @@
   </div>
 
   <div class="q-footer">
-    <button class="gv-btn" id="btn-5050" title="Loại bỏ 2 đáp án sai (phím F)">
-      <svg class="wifi-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.6a9.4 9.4 0 000 18.8z" fill="currentColor"/></svg>
-      50:50
-    </button>
+    <div class="q-footer-actions">
+      <button class="gv-btn" id="btn-5050" title="Loại bỏ 2 đáp án sai (phím F)">
+        <svg class="wifi-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.6a9.4 9.4 0 000 18.8z" fill="currentColor"/></svg>
+        50:50
+      </button>
+      <button class="gv-btn" id="btn-addtime" title="Cộng thêm 10 giây, dùng 1 lần/ván (phím T)">
+        <svg class="wifi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8.4"/><path d="M12 8.6V13l3 2"/><path d="M9.2 2.4h5.6"/></svg>
+        +10s
+      </button>
+    </div>
     <div class="q-footer-actions">
       <button class="gv-btn" id="btn-reveal">HIỆN ĐÁP ÁN</button>
       <button class="gv-btn" id="btn-next" disabled>CÂU TIẾP THEO</button>
@@ -404,7 +420,7 @@
   var LETTERS = ["A","B","C","D"];
 
   /* ================= STATE ================= */
-  var state = { index:0, revealed:false, timeLeft:0, timerId:null };
+  var state = { index:0, revealed:false, timeLeft:0, totalTime:0, timerId:null, extraTimeUsed:false };
 
   /* ================= DOM ================= */
   var screens = {
@@ -424,6 +440,7 @@
   var btnReveal = document.getElementById("btn-reveal");
   var btnNext = document.getElementById("btn-next");
   var btn5050 = document.getElementById("btn-5050");
+  var btnAddTime = document.getElementById("btn-addtime");
   var btnStart = document.getElementById("btn-start");
   var btnRestart = document.getElementById("btn-restart");
   var confettiLayer = document.getElementById("confetti-layer");
@@ -469,6 +486,11 @@
   function playFiftyFiftySound(){
     beep(620, 0.09, "triangle", 0.05);
     beep(410, 0.12, "triangle", 0.045, 0.09);
+  }
+  function playAddTimeSound(){
+    beep(520, 0.09, "sine", 0.05);
+    beep(780, 0.12, "sine", 0.055, 0.09);
+    beep(1040, 0.16, "sine", 0.05, 0.18);
   }
 
   /* ================= BACKGROUND NETWORK MOTIF ================= */
@@ -547,24 +569,43 @@
     btnReveal.disabled = false;
     btnNext.disabled = true;
     btn5050.disabled = false;
+    btnAddTime.disabled = state.extraTimeUsed;
 
     startCountdown(data.time);
   }
 
-  function startCountdown(seconds){
+  function tickCountdown(){
+    state.timeLeft--;
+    updateTimerDisplay(state.timeLeft, state.totalTime);
+    if(state.timeLeft <= 0){
+      clearInterval(state.timerId);
+      playTimeUp();
+    } else {
+      playTick(state.timeLeft <= 5);
+    }
+  }
+
+  function resumeCountdown(){
     clearInterval(state.timerId);
+    state.timerId = setInterval(tickCountdown, 1000);
+  }
+
+  function startCountdown(seconds){
     state.timeLeft = seconds;
-    updateTimerDisplay(seconds, seconds);
-    state.timerId = setInterval(function(){
-      state.timeLeft--;
-      updateTimerDisplay(state.timeLeft, seconds);
-      if(state.timeLeft <= 0){
-        clearInterval(state.timerId);
-        playTimeUp();
-      } else {
-        playTick(state.timeLeft <= 5);
-      }
-    }, 1000);
+    state.totalTime = seconds;
+    updateTimerDisplay(state.timeLeft, state.totalTime);
+    resumeCountdown();
+  }
+
+  function addExtraTime(){
+    if(state.revealed || btnAddTime.disabled) return;
+    state.timeLeft += 10;
+    state.totalTime += 10;
+    updateTimerDisplay(state.timeLeft, state.totalTime);
+    state.extraTimeUsed = true;
+    btnAddTime.disabled = true;
+    playAddTimeSound();
+    resumeCountdown();
   }
 
   function updateTimerDisplay(left, total){
@@ -593,6 +634,7 @@
     btnReveal.disabled = true;
     btnNext.disabled = false;
     btn5050.disabled = true;
+    btnAddTime.disabled = true;
   }
 
   function useFiftyFifty(){
@@ -629,6 +671,7 @@
   function startGame(){
     ensureAudio();
     state.index = 0;
+    state.extraTimeUsed = false;
     showScreen("question");
     loadQuestion(0);
   }
@@ -640,6 +683,7 @@
     confettiLayer.innerHTML = "";
     state.index = 0;
     state.revealed = false;
+    state.extraTimeUsed = false;
     if(screens.welcome.classList.contains("active")) return;
     showScreen("question");
     loadQuestion(0);
@@ -650,6 +694,7 @@
     confettiLayer.innerHTML = "";
     state.index = 0;
     state.revealed = false;
+    state.extraTimeUsed = false;
     showScreen("welcome");
   }
 
@@ -679,6 +724,7 @@
   btnReveal.addEventListener("click", revealAnswer);
   btnNext.addEventListener("click", nextQuestion);
   btn5050.addEventListener("click", useFiftyFifty);
+  btnAddTime.addEventListener("click", addExtraTime);
   btnRestart.addEventListener("click", backToWelcome);
 
   document.addEventListener("keydown", function(e){
@@ -707,6 +753,8 @@
         if(state.revealed) nextQuestion();
       } else if(key === "f" || key === "F"){
         useFiftyFifty();
+      } else if(key === "t" || key === "T"){
+        addExtraTime();
       }
       return;
     }
