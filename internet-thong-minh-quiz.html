@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ai Là Triệu Phú - Phiên Bản Internet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#071a35;
+    --bg-mid:#0d2c56;
+    --bg-glow:#123a63;
+    --accent-gold:#ffc23c;
+    --accent-gold-dark:#e6a821;
+    --correct-green:#27c281;
+    --correct-green-dark:#1a9c66;
+    --card-bg:rgba(255,255,255,0.06);
+    --card-bg-hover:rgba(255,255,255,0.09);
+    --card-border:rgba(255,255,255,0.16);
+    --text-main:#f4f8ff;
+    --text-dim:#a9bde0;
+    --letter-a:#4fd1ff;
+    --letter-b:#b78bff;
+    --letter-c:#ff9f5b;
+    --letter-d:#ff6f9c;
+    --lifeline:#9a6bff;
+    --lifeline-dark:#6a3fd1;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html,body{
+    width:100%; height:100%;
+    background:
+      radial-gradient(ellipse 120% 80% at 50% -10%, var(--bg-glow) 0%, transparent 60%),
+      linear-gradient(160deg, var(--bg-deep) 0%, var(--bg-mid) 55%, #0a2447 100%);
+    color:var(--text-main);
+    font-family:'Be Vietnam Pro', 'Segoe UI', sans-serif;
+    overflow:hidden;
+    user-select:none;
+  }
+
+  #bg-canvas{
+    position:fixed; inset:0; width:100%; height:100%; z-index:0; opacity:0.55;
+  }
+
+  .screen{
+    position:fixed; inset:0; z-index:5;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none;
+    transition:opacity .55s ease;
+    padding:3vh 4vw;
+  }
+  .screen.active{ opacity:1; pointer-events:auto; }
+
+  /* ---------- shared bits ---------- */
+  .pill-tag{
+    display:inline-flex; align-items:center; gap:.5em;
+    background:rgba(255,255,255,0.08);
+    border:1px solid var(--card-border);
+    padding:.5em 1.3em;
+    border-radius:999px;
+    font-weight:600;
+    letter-spacing:.04em;
+    color:var(--text-dim);
+    font-size:clamp(13px,1.1vw,18px);
+  }
+  .wifi-icon{ width:1em; height:1em; display:inline-block; }
+
+  /* ---------- WELCOME ---------- */
+  #welcome-screen{ text-align:center; gap:clamp(18px,2.4vh,34px); }
+  .welcome-badge{ margin-bottom:.5em; }
+  .welcome-title{
+    font-size:clamp(34px,6vw,88px);
+    font-weight:900;
+    letter-spacing:.01em;
+    line-height:1.05;
+    color:var(--accent-gold);
+    text-shadow:0 0 40px rgba(255,194,60,0.35), 0 6px 0 rgba(0,0,0,0.25);
+    max-width:22ch;
+  }
+  .welcome-sub{
+    font-size:clamp(18px,2.4vw,32px);
+    font-weight:600;
+    color:var(--text-main);
+    max-width:34ch;
+  }
+  .welcome-note{
+    font-size:clamp(13px,1.2vw,18px);
+    color:var(--text-dim);
+    font-weight:500;
+  }
+  .btn-start{
+    margin-top:clamp(20px,3vh,44px);
+    font-family:inherit;
+    font-size:clamp(20px,2.2vw,34px);
+    font-weight:800;
+    letter-spacing:.03em;
+    color:#1a1200;
+    background:linear-gradient(180deg, #ffdd7a 0%, var(--accent-gold) 55%, var(--accent-gold-dark) 100%);
+    border:none;
+    border-radius:999px;
+    padding:.75em 2.6em;
+    cursor:pointer;
+    box-shadow:0 10px 0 #a5710b, 0 18px 34px rgba(255,194,60,0.35);
+    animation:pulse-btn 2.4s ease-in-out infinite;
+    transition:transform .12s ease;
+  }
+  .btn-start:active{ transform:translateY(6px); box-shadow:0 4px 0 #a5710b, 0 10px 20px rgba(255,194,60,0.3); }
+  @keyframes pulse-btn{
+    0%,100%{ transform:scale(1); }
+    50%{ transform:scale(1.035); }
+  }
+
+  /* ---------- QUESTION SCREEN ---------- */
+  #question-screen{ align-items:stretch; justify-content:flex-start; padding-top:2.4vh; }
+  .q-header{
+    display:flex; align-items:center; justify-content:space-between;
+    width:100%; max-width:1600px; margin:0 auto;
+  }
+  .q-progress{ display:flex; flex-direction:column; gap:.4em; }
+  .q-progress-num{
+    font-size:clamp(20px,2vw,30px); font-weight:800; color:var(--text-main);
+  }
+  .q-progress-stage{
+    font-size:clamp(12px,1.05vw,16px); font-weight:700; letter-spacing:.12em;
+    color:var(--accent-gold); text-transform:uppercase;
+  }
+  .timer-box{ display:flex; flex-direction:column; align-items:flex-end; gap:.4em; }
+  .timer-num{
+    font-size:clamp(22px,2.4vw,34px); font-weight:800; font-variant-numeric:tabular-nums;
+    color:var(--text-main);
+  }
+  .timer-track{
+    width:clamp(160px,17vw,260px); height:12px; border-radius:999px;
+    background:rgba(255,255,255,0.1); overflow:hidden;
+    border:1px solid rgba(255,255,255,0.14);
+  }
+  .timer-fill{
+    height:100%; width:100%; border-radius:999px;
+    background:var(--correct-green);
+    transition:width 1s linear, background-color .4s ease;
+  }
+  .timer-fill.warn{ background:var(--accent-gold); }
+  .timer-fill.danger{ background:#ff5470; }
+
+  .q-body{
+    flex:1; width:100%; max-width:1600px; margin:0 auto;
+    display:flex; flex-direction:column; justify-content:center;
+    gap:clamp(16px,2.6vh,36px);
+    min-height:0;
+  }
+  .q-text{
+    font-size:clamp(24px,3vw,52px);
+    font-weight:800; line-height:1.28; text-align:center;
+    text-shadow:0 4px 18px rgba(0,0,0,0.35);
+    padding:0 1vw;
+  }
+
+  .answers-grid{
+    display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
+    gap:clamp(12px,1.6vw,26px);
+    width:100%;
+  }
+  .answer-card{
+    display:flex; align-items:center; gap:clamp(12px,1.4vw,22px);
+    background:var(--card-bg); border:2px solid var(--card-border);
+    border-radius:20px; padding:clamp(14px,1.8vh,26px) clamp(16px,1.8vw,30px);
+    transition:opacity .4s ease, transform .4s ease, border-color .4s ease, background .4s ease, box-shadow .4s ease;
+  }
+  .answer-letter{
+    flex:0 0 auto;
+    width:clamp(46px,3.6vw,64px); height:clamp(46px,3.6vw,64px);
+    border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:clamp(22px,2.2vw,32px); font-weight:900;
+    color:#0b1220;
+  }
+  .answer-card[data-letter="A"] .answer-letter{ background:var(--letter-a); }
+  .answer-card[data-letter="B"] .answer-letter{ background:var(--letter-b); }
+  .answer-card[data-letter="C"] .answer-letter{ background:var(--letter-c); }
+  .answer-card[data-letter="D"] .answer-letter{ background:var(--letter-d); }
+  .answer-text{
+    font-size:clamp(16px,1.5vw,26px); font-weight:600; line-height:1.3;
+  }
+
+  .answer-card.correct{
+    border-color:var(--correct-green);
+    background:linear-gradient(135deg, rgba(39,194,129,0.22), rgba(39,194,129,0.08));
+    box-shadow:0 0 0 3px rgba(39,194,129,0.35), 0 12px 30px rgba(39,194,129,0.25);
+    animation:bounce-in .55s cubic-bezier(.34,1.56,.64,1);
+  }
+  .answer-card.dim{ opacity:0.32; transform:scale(0.97); }
+  .answer-card.removed{ opacity:0.22; transform:scale(0.97); filter:grayscale(55%); }
+  .answer-card.removed .answer-text{ text-decoration:line-through; }
+  @keyframes bounce-in{
+    0%{ transform:scale(1); }
+    45%{ transform:scale(1.06); }
+    70%{ transform:scale(0.985); }
+    100%{ transform:scale(1); }
+  }
+
+  .explanation{
+    max-width:1600px; margin:0 auto; width:100%;
+    display:flex; gap:14px; align-items:flex-start;
+    background:rgba(255,194,60,0.09);
+    border-left:5px solid var(--accent-gold);
+    border-radius:12px;
+    padding:clamp(12px,1.6vh,20px) clamp(16px,1.8vw,26px);
+    font-size:clamp(14px,1.35vw,21px);
+    color:var(--text-main);
+    opacity:0; transform:translateY(10px);
+    transition:opacity .45s ease, transform .45s ease;
+    pointer-events:none;
+  }
+  .explanation.show{ opacity:1; transform:translateY(0); }
+  .explanation .bulb{ font-size:1.3em; line-height:1; flex:0 0 auto; }
+
+  .q-footer{
+    width:100%; max-width:1600px; margin:0 auto;
+    display:flex; justify-content:space-between; align-items:center; gap:16px;
+    padding-top:clamp(10px,1.6vh,20px);
+  }
+  .q-footer-actions{ display:flex; gap:16px; }
+  .gv-btn{
+    font-family:inherit; font-weight:800; letter-spacing:.02em; cursor:pointer;
+    font-size:clamp(15px,1.3vw,20px);
+    padding:.8em 1.9em; border-radius:14px; border:none;
+    transition:transform .12s ease, opacity .2s ease, box-shadow .2s ease;
+  }
+  .gv-btn:active{ transform:translateY(3px); }
+  .gv-btn:disabled{ opacity:0.32; cursor:not-allowed; }
+  #btn-reveal{
+    color:#1a1200;
+    background:linear-gradient(180deg, #ffdd7a, var(--accent-gold));
+    box-shadow:0 6px 0 var(--accent-gold-dark);
+  }
+  #btn-reveal:disabled{ box-shadow:0 6px 0 rgba(230,168,33,0.3); }
+  #btn-next{
+    color:#062616;
+    background:linear-gradient(180deg, #5fe3a8, var(--correct-green));
+    box-shadow:0 6px 0 var(--correct-green-dark);
+  }
+  #btn-next:disabled{ box-shadow:0 6px 0 rgba(26,156,102,0.3); }
+  #btn-5050{
+    display:flex; align-items:center; gap:.55em;
+    color:#fff;
+    background:linear-gradient(180deg, #d3b8ff, var(--lifeline));
+    box-shadow:0 6px 0 var(--lifeline-dark);
+  }
+  #btn-5050:disabled{ box-shadow:0 6px 0 rgba(106,63,209,0.3); }
+  #btn-5050 .wifi-icon{ width:1.15em; height:1.15em; }
+
+  /* ---------- END SCREEN ---------- */
+  #end-screen{ text-align:center; gap:clamp(16px,2.2vh,28px); }
+  .end-title{
+    font-size:clamp(28px,4.6vw,66px); font-weight:900; color:var(--accent-gold);
+    text-shadow:0 0 40px rgba(255,194,60,0.35);
+    max-width:24ch; line-height:1.15;
+  }
+  .end-msg{
+    font-size:clamp(16px,1.9vw,26px); font-weight:500; color:var(--text-main);
+    max-width:46ch; line-height:1.5;
+  }
+  .btn-restart{
+    margin-top:10px;
+    font-family:inherit; font-weight:800; font-size:clamp(16px,1.6vw,24px);
+    color:var(--text-main); background:rgba(255,255,255,0.08);
+    border:2px solid var(--card-border); border-radius:999px;
+    padding:.7em 2.2em; cursor:pointer; transition:background .2s ease, transform .12s ease;
+  }
+  .btn-restart:hover{ background:rgba(255,255,255,0.14); }
+  .btn-restart:active{ transform:translateY(3px); }
+
+  #confetti-layer{ position:fixed; inset:0; z-index:6; pointer-events:none; overflow:hidden; }
+  .confetti-piece{ position:absolute; top:-24px; opacity:0.95; border-radius:2px; }
+  @keyframes confetti-fall{
+    to{ transform:translateY(112vh) rotate(760deg); }
+  }
+
+  @media (max-height:620px){
+    .q-text{ font-size:clamp(18px,2.6vw,32px); }
+    .answer-text{ font-size:clamp(13px,1.3vw,18px); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- WELCOME -->
+<section id="welcome-screen" class="screen active">
+  <span class="pill-tag welcome-badge">
+    <svg class="wifi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M2 8.5c5.5-5 14.5-5 20 0"/><path d="M5.5 12.5c3.7-3.3 9.3-3.3 13 0"/><path d="M9 16.5c1.9-1.6 4.1-1.6 6 0"/><circle cx="12" cy="20" r="1.4" fill="currentColor" stroke="none"/></svg>
+    KHÁM PHÁ · KỸ NĂNG SỐNG THCS
+  </span>
+  <h1 class="welcome-title">AI LÀ TRIỆU PHÚ<br>PHIÊN BẢN INTERNET</h1>
+  <p class="welcome-sub">Cùng giúp Minh trở thành Công dân số thông thái</p>
+  <p class="welcome-note">Trò chơi gồm 10 câu hỏi, chia làm 3 chặng độ khó tăng dần</p>
+  <button class="btn-start" id="btn-start">BẮT ĐẦU</button>
+</section>
+
+<!-- QUESTION -->
+<section id="question-screen" class="screen">
+  <div class="q-header">
+    <div class="q-progress">
+      <span class="q-progress-num" id="q-num">CÂU 1/10</span>
+      <span class="q-progress-stage" id="q-stage">KHỞI ĐỘNG</span>
+    </div>
+    <div class="timer-box">
+      <span class="timer-num" id="timer-num">15</span>
+      <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+    </div>
+  </div>
+
+  <div class="q-body">
+    <p class="q-text" id="q-text">Câu hỏi</p>
+    <div class="answers-grid" id="answers-grid">
+      <div class="answer-card" data-letter="A"><span class="answer-letter">A</span><span class="answer-text" data-role="text"></span></div>
+      <div class="answer-card" data-letter="B"><span class="answer-letter">B</span><span class="answer-text" data-role="text"></span></div>
+      <div class="answer-card" data-letter="C"><span class="answer-letter">C</span><span class="answer-text" data-role="text"></span></div>
+      <div class="answer-card" data-letter="D"><span class="answer-letter">D</span><span class="answer-text" data-role="text"></span></div>
+    </div>
+    <div class="explanation" id="explanation">
+      <span class="bulb">💡</span>
+      <span id="explanation-text"></span>
+    </div>
+  </div>
+
+  <div class="q-footer">
+    <button class="gv-btn" id="btn-5050" title="Loại bỏ 2 đáp án sai (phím F)">
+      <svg class="wifi-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.6a9.4 9.4 0 000 18.8z" fill="currentColor"/></svg>
+      50:50
+    </button>
+    <div class="q-footer-actions">
+      <button class="gv-btn" id="btn-reveal">HIỆN ĐÁP ÁN</button>
+      <button class="gv-btn" id="btn-next" disabled>CÂU TIẾP THEO</button>
+    </div>
+  </div>
+</section>
+
+<!-- END -->
+<section id="end-screen" class="screen">
+  <span class="pill-tag">
+    <svg class="wifi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M2 8.5c5.5-5 14.5-5 20 0"/><path d="M5.5 12.5c3.7-3.3 9.3-3.3 13 0"/><path d="M9 16.5c1.9-1.6 4.1-1.6 6 0"/><circle cx="12" cy="20" r="1.4" fill="currentColor" stroke="none"/></svg>
+    HOÀN THÀNH
+  </span>
+  <h1 class="end-title">MINH ĐÃ TRỞ THÀNH<br>CÔNG DÂN SỐ THÔNG THÁI!</h1>
+  <p class="end-msg">Cảm ơn cả lớp đã giúp Minh! Bây giờ, cùng chuyển sang phần Thực hành để viết Hợp đồng số của chính mình nhé!</p>
+  <button class="btn-restart" id="btn-restart">CHƠI LẠI</button>
+</section>
+
+<div id="confetti-layer"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= DATA ================= */
+  var QUESTIONS = [
+    { stage:"KHỞI ĐỘNG", time:15,
+      q:"Trong các ứng dụng sau, đâu là mạng xã hội?",
+      a:["Máy tính Casio","Facebook","Microsoft Word","Google Chrome"], correct:1,
+      ex:"Facebook là mạng xã hội phổ biến. Các lựa chọn còn lại là công cụ tính toán, phần mềm soạn thảo và trình duyệt web." },
+    { stage:"KHỞI ĐỘNG", time:15,
+      q:"Minh muốn kết nối với bạn cấp 1 đã chuyển trường xa. MXH giúp Minh điều gì?",
+      a:["Làm bài tập về nhà","Nấu ăn ngon hơn","Giữ liên lạc dù xa cách địa lý","Học giỏi môn Toán"], correct:2,
+      ex:"Một trong những lợi ích lớn nhất của MXH là kết nối con người vượt qua khoảng cách địa lý, giúp duy trì các mối quan hệ dù ở xa." },
+    { stage:"KHỞI ĐỘNG", time:15,
+      q:"Đâu KHÔNG phải là lợi ích của mạng xã hội?",
+      a:["Cập nhật tin tức nhanh","Học hỏi kiến thức miễn phí","Kết nối bạn bè","Giúp mắt sáng, cột sống khỏe hơn"], correct:3,
+      ex:"Ngược lại, dùng MXH nhiều còn gây hại cho mắt và cột sống do nhìn màn hình lâu và ngồi sai tư thế." },
+    { stage:"TĂNG TỐC", time:15,
+      q:"Minh dùng TikTok 4 tiếng/ngày, thức đến 1h sáng. Hậu quả nào sau đây KHÔNG đúng?",
+      a:["Mệt mỏi, buồn ngủ trên lớp","Học giỏi hơn vì có nhiều thông tin","Ảnh hưởng thị lực","Giảm khả năng tập trung"], correct:1,
+      ex:"Thức khuya lướt MXH gây thiếu ngủ, giảm khả năng tập trung và tiếp thu bài - hoàn toàn không giúp học giỏi hơn." },
+    { stage:"TĂNG TỐC", time:15,
+      q:"Minh thấy bạn A đăng ảnh du lịch sang chảnh, Minh cảm thấy tự ti về gia đình mình. Đây là mặt trái nào của MXH?",
+      a:["Lừa đảo qua mạng","So sánh bản thân gây tự ti","Cập nhật sai tin tức","Lãng phí thời gian"], correct:1,
+      ex:"Việc thường xuyên so sánh cuộc sống mình với hình ảnh “long lanh” của người khác trên MXH dễ gây tự ti, ganh tị và ảnh hưởng tinh thần." },
+    { stage:"TĂNG TỐC", time:15,
+      q:"Có người lạ nhắn: 'Chúc mừng bạn trúng iPhone 15! Nhấn link để nhận quà'. Minh nên làm gì?",
+      a:["Nhấn ngay kẻo hết","Chia sẻ cho bạn bè cùng nhận","Không nhấn, báo cho phụ huynh/thầy cô","Trả lời tin nhắn để hỏi thêm"], correct:2,
+      ex:"Đây là chiêu lừa đảo phổ biến. Nhấn link có thể mất tài khoản, mất tiền, bị đánh cắp thông tin. Luôn báo người lớn khi gặp tình huống này." },
+    { stage:"TĂNG TỐC", time:15,
+      q:"Đâu là dấu hiệu Minh đã NGHIỆN mạng xã hội?",
+      a:["Dùng MXH 30 phút mỗi tối để giải trí","Cáu gắt, bứt rứt khi không được dùng điện thoại","Dùng MXH để học tiếng Anh mỗi ngày","Nhắn tin với mẹ qua Zalo"], correct:1,
+      ex:"Cảm xúc lệ thuộc vào điện thoại (bứt rứt, cáu gắt khi không có) là dấu hiệu rõ ràng của nghiện. Dùng MXH có mục đích và giới hạn thời gian thì không phải nghiện." },
+    { stage:"VỀ ĐÍCH", time:10,
+      q:"Minh nhận thấy mình đang nghiện TikTok. Bước ĐẦU TIÊN hiệu quả nhất Minh nên làm là gì?",
+      a:["Xoá luôn tài khoản, không bao giờ dùng lại","Tự đặt giới hạn thời gian sử dụng mỗi ngày","Nhờ bố mẹ giữ hết điện thoại","Cứ dùng thoải mái, khi nào chán tự bỏ"], correct:1,
+      ex:"Đặt giới hạn là bước cân bằng và bền vững nhất. Xoá đột ngột dễ gây “thèm” quay lại, còn nhờ người khác kiểm soát thì không rèn được kỷ luật bản thân." },
+    { stage:"VỀ ĐÍCH", time:10,
+      q:"Cách nào sau đây KHÔNG giúp phòng tránh nghiện MXH?",
+      a:["Tắt thông báo ứng dụng","Tham gia hoạt động ngoại khoá, thể thao","Cài thêm nhiều app MXH mới để đỡ chán app cũ","Đặt điện thoại xa giường khi ngủ"], correct:2,
+      ex:"Cài thêm app chỉ khiến thời gian dùng điện thoại tăng lên chứ không giảm. Các cách còn lại đều giúp giảm phụ thuộc vào MXH." },
+    { stage:"VỀ ĐÍCH", time:10,
+      q:"Đâu là ý nghĩa đúng nhất của cụm từ 'Sử dụng Internet thông minh'?",
+      a:["Dùng Internet càng nhiều càng giỏi","Chỉ dùng Internet để học, không giải trí","Tuyệt đối không dùng MXH","Chủ động chọn nội dung có ích, kiểm soát thời gian và bảo vệ bản thân"], correct:3,
+      ex:"Sử dụng thông minh không phải là dùng nhiều hay ít, mà là CHỦ ĐỘNG kiểm soát: chọn nội dung tốt, giới hạn thời gian và biết tự bảo vệ trước rủi ro." }
+  ];
+  var LETTERS = ["A","B","C","D"];
+
+  /* ================= STATE ================= */
+  var state = { index:0, revealed:false, timeLeft:0, timerId:null };
+
+  /* ================= DOM ================= */
+  var screens = {
+    welcome: document.getElementById("welcome-screen"),
+    question: document.getElementById("question-screen"),
+    end: document.getElementById("end-screen")
+  };
+  var qNumEl = document.getElementById("q-num");
+  var qStageEl = document.getElementById("q-stage");
+  var qTextEl = document.getElementById("q-text");
+  var answersGrid = document.getElementById("answers-grid");
+  var answerCards = Array.prototype.slice.call(answersGrid.querySelectorAll(".answer-card"));
+  var explanationEl = document.getElementById("explanation");
+  var explanationTextEl = document.getElementById("explanation-text");
+  var timerNumEl = document.getElementById("timer-num");
+  var timerFillEl = document.getElementById("timer-fill");
+  var btnReveal = document.getElementById("btn-reveal");
+  var btnNext = document.getElementById("btn-next");
+  var btn5050 = document.getElementById("btn-5050");
+  var btnStart = document.getElementById("btn-start");
+  var btnRestart = document.getElementById("btn-restart");
+  var confettiLayer = document.getElementById("confetti-layer");
+
+  function showScreen(name){
+    Object.keys(screens).forEach(function(k){
+      screens[k].classList.toggle("active", k === name);
+    });
+  }
+
+  /* ================= AUDIO ================= */
+  var audioCtx = null;
+  function ensureAudio(){
+    if(!audioCtx){
+      try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; }
+    } else if(audioCtx.state === "suspended"){
+      audioCtx.resume();
+    }
+  }
+  function beep(freq, dur, type, vol, delay){
+    if(!audioCtx) return;
+    type = type || "sine"; vol = vol==null?0.05:vol; delay = delay||0;
+    var t0 = audioCtx.currentTime + delay;
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+  function playTick(urgent){
+    beep(urgent ? 1250 : 950, 0.045, "square", urgent ? 0.05 : 0.035);
+  }
+  function playTimeUp(){
+    beep(260, 0.28, "sawtooth", 0.06);
+    beep(180, 0.34, "sawtooth", 0.05, 0.12);
+  }
+  function playCorrectChime(){
+    beep(880, 0.14, "sine", 0.07);
+    beep(1320, 0.2, "sine", 0.06, 0.12);
+  }
+  function playFiftyFiftySound(){
+    beep(620, 0.09, "triangle", 0.05);
+    beep(410, 0.12, "triangle", 0.045, 0.09);
+  }
+
+  /* ================= BACKGROUND NETWORK MOTIF ================= */
+  var canvas = document.getElementById("bg-canvas");
+  var ctx = canvas.getContext("2d");
+  var particles = [];
+  function resizeCanvas(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    var count = Math.max(24, Math.min(70, Math.round((canvas.width*canvas.height)/26000)));
+    particles = [];
+    for(var i=0;i<count;i++){
+      particles.push({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height,
+        vx: (Math.random()-0.5)*0.25,
+        vy: (Math.random()-0.5)*0.25,
+        r: Math.random()*1.6+1
+      });
+    }
+  }
+  function animateBg(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    var linkDist = Math.min(canvas.width, canvas.height) * 0.14;
+    for(var i=0;i<particles.length;i++){
+      var p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    }
+    for(var a=0;a<particles.length;a++){
+      for(var b=a+1;b<particles.length;b++){
+        var dx = particles[a].x - particles[b].x;
+        var dy = particles[a].y - particles[b].y;
+        var dist = Math.sqrt(dx*dx+dy*dy);
+        if(dist < linkDist){
+          ctx.strokeStyle = "rgba(120,170,255," + (0.14 * (1-dist/linkDist)) + ")";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(particles[a].x, particles[a].y);
+          ctx.lineTo(particles[b].x, particles[b].y);
+          ctx.stroke();
+        }
+      }
+    }
+    for(var c=0;c<particles.length;c++){
+      var pt = particles[c];
+      ctx.fillStyle = "rgba(160,200,255,0.55)";
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    requestAnimationFrame(animateBg);
+  }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+  requestAnimationFrame(animateBg);
+
+  /* ================= GAME LOGIC ================= */
+  function loadQuestion(i){
+    var data = QUESTIONS[i];
+    state.revealed = false;
+
+    qNumEl.textContent = "CÂU " + (i+1) + "/10";
+    qStageEl.textContent = data.stage;
+    qTextEl.textContent = data.q;
+
+    answerCards.forEach(function(card, idx){
+      card.classList.remove("correct","dim","removed");
+      card.querySelector('[data-role="text"]').textContent = data.a[idx];
+    });
+
+    explanationEl.classList.remove("show");
+    explanationTextEl.textContent = data.ex;
+
+    btnReveal.disabled = false;
+    btnNext.disabled = true;
+    btn5050.disabled = false;
+
+    startCountdown(data.time);
+  }
+
+  function startCountdown(seconds){
+    clearInterval(state.timerId);
+    state.timeLeft = seconds;
+    updateTimerDisplay(seconds, seconds);
+    state.timerId = setInterval(function(){
+      state.timeLeft--;
+      updateTimerDisplay(state.timeLeft, seconds);
+      if(state.timeLeft <= 0){
+        clearInterval(state.timerId);
+        playTimeUp();
+      } else {
+        playTick(state.timeLeft <= 5);
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay(left, total){
+    var clamped = Math.max(0, left);
+    timerNumEl.textContent = clamped;
+    var pct = Math.max(0, (left/total)*100);
+    timerFillEl.style.width = pct + "%";
+    timerFillEl.classList.remove("warn","danger");
+    if(left <= total*0.25) timerFillEl.classList.add("danger");
+    else if(left <= total*0.5) timerFillEl.classList.add("warn");
+  }
+
+  function revealAnswer(){
+    if(state.revealed) return;
+    state.revealed = true;
+    clearInterval(state.timerId);
+
+    var data = QUESTIONS[state.index];
+    answerCards.forEach(function(card, idx){
+      if(idx === data.correct) card.classList.add("correct");
+      else card.classList.add("dim");
+    });
+    explanationEl.classList.add("show");
+    playCorrectChime();
+
+    btnReveal.disabled = true;
+    btnNext.disabled = false;
+    btn5050.disabled = true;
+  }
+
+  function useFiftyFifty(){
+    if(state.revealed || btn5050.disabled) return;
+    var data = QUESTIONS[state.index];
+    var wrongIdx = [0,1,2,3].filter(function(i){ return i !== data.correct; });
+    for(var i=wrongIdx.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = wrongIdx[i]; wrongIdx[i] = wrongIdx[j]; wrongIdx[j] = tmp;
+    }
+    wrongIdx.slice(0,2).forEach(function(idx){
+      answerCards[idx].classList.add("removed");
+    });
+    btn5050.disabled = true;
+    playFiftyFiftySound();
+  }
+
+  function nextQuestion(){
+    if(!state.revealed) return;
+    if(state.index < QUESTIONS.length - 1){
+      state.index++;
+      loadQuestion(state.index);
+    } else {
+      finishGame();
+    }
+  }
+
+  function finishGame(){
+    clearInterval(state.timerId);
+    showScreen("end");
+    launchConfetti();
+  }
+
+  function startGame(){
+    ensureAudio();
+    state.index = 0;
+    showScreen("question");
+    loadQuestion(0);
+  }
+
+  function resetGame(silent){
+    var ok = silent || window.confirm("Quay lại câu 1?");
+    if(!ok) return;
+    clearInterval(state.timerId);
+    confettiLayer.innerHTML = "";
+    state.index = 0;
+    state.revealed = false;
+    if(screens.welcome.classList.contains("active")) return;
+    showScreen("question");
+    loadQuestion(0);
+  }
+
+  function backToWelcome(){
+    clearInterval(state.timerId);
+    confettiLayer.innerHTML = "";
+    state.index = 0;
+    state.revealed = false;
+    showScreen("welcome");
+  }
+
+  /* ================= CONFETTI ================= */
+  var confettiColors = ["#ffc23c","#27c281","#4fd1ff","#b78bff","#ff6f9c"];
+  function launchConfetti(){
+    confettiLayer.innerHTML = "";
+    var count = 140;
+    for(var i=0;i<count;i++){
+      var piece = document.createElement("div");
+      piece.className = "confetti-piece";
+      var size = 6 + Math.random()*8;
+      piece.style.left = (Math.random()*100) + "vw";
+      piece.style.width = size + "px";
+      piece.style.height = (size*1.5) + "px";
+      piece.style.background = confettiColors[Math.floor(Math.random()*confettiColors.length)];
+      piece.style.transform = "rotate(" + Math.floor(Math.random()*360) + "deg)";
+      var duration = 3 + Math.random()*3;
+      var delay = Math.random()*1.5;
+      piece.style.animation = "confetti-fall " + duration + "s linear " + delay + "s forwards";
+      confettiLayer.appendChild(piece);
+    }
+  }
+
+  /* ================= EVENTS ================= */
+  btnStart.addEventListener("click", startGame);
+  btnReveal.addEventListener("click", revealAnswer);
+  btnNext.addEventListener("click", nextQuestion);
+  btn5050.addEventListener("click", useFiftyFifty);
+  btnRestart.addEventListener("click", backToWelcome);
+
+  document.addEventListener("keydown", function(e){
+    var key = e.key;
+    if(key === " " || key === "Enter" || key === "ArrowRight" || key === "r" || key === "R"){
+      e.preventDefault();
+    }
+
+    if(key === "r" || key === "R"){
+      if(screens.question.classList.contains("active") || screens.end.classList.contains("active")){
+        resetGame(false);
+      }
+      return;
+    }
+
+    if(screens.welcome.classList.contains("active")){
+      if(key === " " || key === "Enter") startGame();
+      return;
+    }
+
+    if(screens.question.classList.contains("active")){
+      if(key === " " || key === "Enter"){
+        if(!state.revealed) revealAnswer();
+        else nextQuestion();
+      } else if(key === "ArrowRight"){
+        if(state.revealed) nextQuestion();
+      } else if(key === "f" || key === "F"){
+        useFiftyFifty();
+      }
+      return;
+    }
+
+    if(screens.end.classList.contains("active")){
+      if(key === " " || key === "Enter") backToWelcome();
+      return;
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
