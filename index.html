@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
 <style>
   :root{
     --bg-deep:#071a35;
@@ -817,25 +820,69 @@
     }
   });
 
-  /* ================= REMOTE SYNC (dieu khien tu dien thoai) ================= */
+  /* ================= REMOTE SYNC (dieu khien tu dien thoai) =================
+     Co 2 kenh dong bo chay song song, doc lap voi nhau:
+     - Kenh 1: WebSocket LAN qua server.js (chi hoat dong khi mo bang server rieng, cung Wi-Fi, khong can Internet)
+     - Kenh 2: Firebase Realtime Database (hoat dong qua Internet tu bat ky dau, dung khi deploy len Vercel)
+     Dien thoai bam nut se gui lenh qua ca 2 kenh dang san sang; man hinh nhan lenh tu kenh nao truoc thi xu ly truoc.
+  ============================================================================ */
+
+  /* ---- Kenh 1: WebSocket LAN ---- */
   var remoteWs = null;
+  var wsRetryCount = 0;
+  var WS_MAX_RETRIES = 3;
 
   function connectRemoteSync(){
     if(!/^https?:$/.test(location.protocol)) return;
     try{
       var proto = location.protocol === "https:" ? "wss:" : "ws:";
       remoteWs = new WebSocket(proto + "//" + location.host + "/ws");
-      remoteWs.addEventListener("open", syncState);
+      remoteWs.addEventListener("open", function(){ wsRetryCount = 0; syncState(); });
       remoteWs.addEventListener("message", function(ev){
         var msg;
         try{ msg = JSON.parse(ev.data); }catch(e){ return; }
         if(msg.type === "cmd") handleRemoteCommand(msg.action);
       });
-      remoteWs.addEventListener("close", function(){ setTimeout(connectRemoteSync, 2000); });
+      remoteWs.addEventListener("close", function(){
+        remoteWs = null;
+        wsRetryCount++;
+        if(wsRetryCount <= WS_MAX_RETRIES) setTimeout(connectRemoteSync, 2000);
+      });
       remoteWs.addEventListener("error", function(){ if(remoteWs) remoteWs.close(); });
     }catch(e){ remoteWs = null; }
   }
 
+  /* ---- Kenh 2: Firebase Realtime Database ----
+     Config nam trong firebase-config.js (dung chung voi remote.html).
+     Neu de trong apiKey, kenh nay tu dong bo qua, khong anh huong kenh WebSocket LAN. */
+  var fbCmdRef = null;
+  var fbStateRef = null;
+  var fbFirstCmdSnapshot = true;
+  var fbLastCmdTs = null;
+
+  function connectFirebaseSync(){
+    if(!FIREBASE_CONFIG.apiKey || typeof firebase === "undefined") return;
+    try{
+      firebase.initializeApp(FIREBASE_CONFIG);
+      var db = firebase.database();
+      fbCmdRef = db.ref("millionaire-game/cmd");
+      fbStateRef = db.ref("millionaire-game/state");
+      fbCmdRef.on("value", function(snap){
+        var msg = snap.val();
+        if(fbFirstCmdSnapshot){
+          fbFirstCmdSnapshot = false;
+          if(msg) fbLastCmdTs = msg.ts;
+          return;
+        }
+        if(!msg || msg.ts === fbLastCmdTs) return;
+        fbLastCmdTs = msg.ts;
+        handleRemoteCommand(msg.action);
+      });
+      syncState();
+    }catch(e){ fbCmdRef = null; fbStateRef = null; }
+  }
+
+  /* ---- Xu ly lenh & dong bo trang thai (dung chung cho ca 2 kenh) ---- */
   function handleRemoteCommand(action){
     ensureAudio();
     if(action === "start"){
@@ -853,11 +900,9 @@
     }
   }
 
-  function syncState(){
-    if(!remoteWs || remoteWs.readyState !== 1) return;
-    var data;
+  function buildSyncStateData(){
     if(screens.question.classList.contains("active")){
-      data = {
+      return {
         screen: "question",
         index: state.index,
         total: QUESTIONS.length,
@@ -869,15 +914,23 @@
         btn5050Disabled: btn5050.disabled,
         btnAddTimeDisabled: btnAddTime.disabled
       };
-    } else if(screens.end.classList.contains("active")){
-      data = { screen: "end" };
-    } else {
-      data = { screen: "welcome" };
     }
-    remoteWs.send(JSON.stringify({ type:"state", state:data }));
+    if(screens.end.classList.contains("active")) return { screen: "end" };
+    return { screen: "welcome" };
+  }
+
+  function syncState(){
+    var data = buildSyncStateData();
+    if(remoteWs && remoteWs.readyState === 1){
+      remoteWs.send(JSON.stringify({ type:"state", state:data }));
+    }
+    if(fbStateRef){
+      fbStateRef.set(data);
+    }
   }
 
   connectRemoteSync();
+  connectFirebaseSync();
 
 })();
 </script>

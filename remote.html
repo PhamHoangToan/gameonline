@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
 <style>
   :root{
     --bg-deep:#071a35;
@@ -159,38 +162,80 @@
   }
   setAllDisabled(true);
 
+  /* ---- Kenh 1: WebSocket LAN (chi hoat dong khi mo qua server.js, cung Wi-Fi) ---- */
   var ws = null;
+  var wsConnected = false;
+  var wsRetryCount = 0;
+  var WS_MAX_RETRIES = 3;
+
+  /* ---- Kenh 2: Firebase Realtime Database (hoat dong qua Internet, vd tren Vercel) ---- */
+  var fbConnected = false;
+  var fbCmdRef = null;
+  var fbStateRef = null;
 
   function setStatus(text, ok){
     statusText.textContent = text;
     statusDot.classList.toggle("ok", !!ok);
   }
 
-  function connect(){
-    var proto = location.protocol === "https:" ? "wss:" : "ws:";
-    ws = new WebSocket(proto + "//" + location.host + "/ws");
-
-    ws.addEventListener("open", function(){
-      setStatus("Đã kết nối", true);
-    });
-    ws.addEventListener("close", function(){
-      setStatus("Mất kết nối, đang thử lại...", false);
+  function updateStatus(){
+    if(wsConnected || fbConnected){
+      setStatus("Đã kết nối" + (fbConnected ? " (Internet)" : " (Wi-Fi)"), true);
+    } else {
+      setStatus("Đang kết nối...", false);
       setAllDisabled(true);
-      setTimeout(connect, 1500);
-    });
-    ws.addEventListener("error", function(){
-      if(ws) ws.close();
-    });
-    ws.addEventListener("message", function(ev){
-      var msg;
-      try{ msg = JSON.parse(ev.data); }catch(e){ return; }
-      if(msg.type === "state") applyState(msg.state);
-    });
+    }
+  }
+
+  function connectWs(){
+    var proto = location.protocol === "https:" ? "wss:" : "ws:";
+    try{
+      ws = new WebSocket(proto + "//" + location.host + "/ws");
+      ws.addEventListener("open", function(){
+        wsConnected = true;
+        wsRetryCount = 0;
+        updateStatus();
+      });
+      ws.addEventListener("close", function(){
+        ws = null;
+        wsConnected = false;
+        updateStatus();
+        wsRetryCount++;
+        if(wsRetryCount <= WS_MAX_RETRIES) setTimeout(connectWs, 1500);
+      });
+      ws.addEventListener("error", function(){
+        if(ws) ws.close();
+      });
+      ws.addEventListener("message", function(ev){
+        var msg;
+        try{ msg = JSON.parse(ev.data); }catch(e){ return; }
+        if(msg.type === "state") applyState(msg.state);
+      });
+    }catch(e){ ws = null; }
+  }
+
+  function connectFirebase(){
+    if(!FIREBASE_CONFIG.apiKey || typeof firebase === "undefined") return;
+    try{
+      firebase.initializeApp(FIREBASE_CONFIG);
+      var db = firebase.database();
+      fbCmdRef = db.ref("millionaire-game/cmd");
+      fbStateRef = db.ref("millionaire-game/state");
+      fbStateRef.on("value", function(snap){
+        fbConnected = true;
+        updateStatus();
+        var state = snap.val();
+        if(state) applyState(state);
+      });
+    }catch(e){ fbCmdRef = null; fbStateRef = null; }
   }
 
   function send(action){
     if(ws && ws.readyState === WebSocket.OPEN){
       ws.send(JSON.stringify({ type:"cmd", action:action }));
+    }
+    if(fbCmdRef){
+      fbCmdRef.set({ action:action, ts: firebase.database.ServerValue.TIMESTAMP });
     }
   }
 
@@ -235,7 +280,8 @@
     }
   }
 
-  connect();
+  connectWs();
+  connectFirebase();
 })();
 </script>
 </body>
