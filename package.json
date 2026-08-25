@@ -1,0 +1,12 @@
+{
+  "name": "ai-la-trieu-phu-remote",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Server LAN nho de dieu khien tro choi Ai La Trieu Phu tu dien thoai, hien thi tren laptop",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

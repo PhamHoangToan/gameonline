@@ -617,6 +617,7 @@
     btnAddTime.disabled = state.extraTimeUsed;
 
     startCountdown(data.time);
+    syncState();
   }
 
   function tickCountdown(){
@@ -628,6 +629,7 @@
     } else {
       playTick(state.timeLeft <= 5);
     }
+    syncState();
   }
 
   function resumeCountdown(){
@@ -651,6 +653,7 @@
     btnAddTime.disabled = true;
     playAddTimeSound();
     resumeCountdown();
+    syncState();
   }
 
   function updateTimerDisplay(left, total){
@@ -680,6 +683,7 @@
     btnNext.disabled = false;
     btn5050.disabled = true;
     btnAddTime.disabled = true;
+    syncState();
   }
 
   function useFiftyFifty(){
@@ -695,6 +699,7 @@
     });
     btn5050.disabled = true;
     playFiftyFiftySound();
+    syncState();
   }
 
   function nextQuestion(){
@@ -711,6 +716,7 @@
     clearInterval(state.timerId);
     showScreen("end");
     launchConfetti();
+    syncState();
   }
 
   function startGame(){
@@ -741,6 +747,7 @@
     state.revealed = false;
     state.extraTimeUsed = false;
     showScreen("welcome");
+    syncState();
   }
 
   /* ================= CONFETTI ================= */
@@ -809,6 +816,68 @@
       return;
     }
   });
+
+  /* ================= REMOTE SYNC (dieu khien tu dien thoai) ================= */
+  var remoteWs = null;
+
+  function connectRemoteSync(){
+    if(!/^https?:$/.test(location.protocol)) return;
+    try{
+      var proto = location.protocol === "https:" ? "wss:" : "ws:";
+      remoteWs = new WebSocket(proto + "//" + location.host + "/ws");
+      remoteWs.addEventListener("open", syncState);
+      remoteWs.addEventListener("message", function(ev){
+        var msg;
+        try{ msg = JSON.parse(ev.data); }catch(e){ return; }
+        if(msg.type === "cmd") handleRemoteCommand(msg.action);
+      });
+      remoteWs.addEventListener("close", function(){ setTimeout(connectRemoteSync, 2000); });
+      remoteWs.addEventListener("error", function(){ if(remoteWs) remoteWs.close(); });
+    }catch(e){ remoteWs = null; }
+  }
+
+  function handleRemoteCommand(action){
+    ensureAudio();
+    if(action === "start"){
+      if(screens.welcome.classList.contains("active")) startGame();
+    } else if(action === "reveal"){
+      if(screens.question.classList.contains("active")) revealAnswer();
+    } else if(action === "next"){
+      if(screens.question.classList.contains("active")) nextQuestion();
+    } else if(action === "fifty"){
+      if(screens.question.classList.contains("active")) useFiftyFifty();
+    } else if(action === "addtime"){
+      if(screens.question.classList.contains("active")) addExtraTime();
+    } else if(action === "restart"){
+      backToWelcome();
+    }
+  }
+
+  function syncState(){
+    if(!remoteWs || remoteWs.readyState !== 1) return;
+    var data;
+    if(screens.question.classList.contains("active")){
+      data = {
+        screen: "question",
+        index: state.index,
+        total: QUESTIONS.length,
+        stage: QUESTIONS[state.index].stage,
+        timeLeft: state.timeLeft,
+        totalTime: state.totalTime,
+        btnRevealDisabled: btnReveal.disabled,
+        btnNextDisabled: btnNext.disabled,
+        btn5050Disabled: btn5050.disabled,
+        btnAddTimeDisabled: btnAddTime.disabled
+      };
+    } else if(screens.end.classList.contains("active")){
+      data = { screen: "end" };
+    } else {
+      data = { screen: "welcome" };
+    }
+    remoteWs.send(JSON.stringify({ type:"state", state:data }));
+  }
+
+  connectRemoteSync();
 
 })();
 </script>

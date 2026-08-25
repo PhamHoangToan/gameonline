@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Điều Khiển - Ai Là Triệu Phú</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#071a35;
+    --bg-mid:#0d2c56;
+    --accent-gold:#ffc23c;
+    --accent-gold-dark:#e6a821;
+    --correct-green:#27c281;
+    --correct-green-dark:#1a9c66;
+    --lifeline:#9a6bff;
+    --lifeline-dark:#6a3fd1;
+    --addtime:#22d3ee;
+    --addtime-dark:#0e7490;
+    --card-border:rgba(255,255,255,0.16);
+    --text-main:#f4f8ff;
+    --text-dim:#a9bde0;
+    --danger:#ff5470;
+    --danger-dark:#c22a48;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    width:100%; min-height:100%;
+    background:linear-gradient(160deg, var(--bg-deep) 0%, var(--bg-mid) 55%, #0a2447 100%);
+    color:var(--text-main);
+    font-family:'Be Vietnam Pro','Segoe UI',sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  body{
+    padding:max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; gap:14px;
+    min-height:100vh;
+  }
+  .status-row{
+    display:flex; align-items:center; justify-content:center; gap:.5em;
+    font-size:13px; font-weight:600; color:var(--text-dim);
+  }
+  .status-dot{ width:9px; height:9px; border-radius:50%; background:var(--danger); flex:0 0 auto; }
+  .status-dot.ok{ background:var(--correct-green); }
+
+  .info-card{
+    background:rgba(255,255,255,0.06);
+    border:1px solid var(--card-border);
+    border-radius:16px;
+    padding:16px;
+    text-align:center;
+  }
+  .info-stage{
+    font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--accent-gold); margin-bottom:4px;
+  }
+  .info-main{ font-size:19px; font-weight:800; }
+  .info-timer{ font-size:15px; font-weight:600; color:var(--text-dim); margin-top:4px; }
+
+  .btn-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:12px;
+    flex:1;
+  }
+  .rbtn{
+    font-family:inherit; font-weight:800; letter-spacing:.02em; cursor:pointer;
+    font-size:clamp(14px,4vw,18px);
+    border:none; border-radius:16px;
+    padding:18px 10px;
+    color:#fff;
+    transition:transform .1s ease, opacity .2s ease;
+    -webkit-user-select:none;
+  }
+  .rbtn:active{ transform:scale(0.96); }
+  .rbtn:disabled{ opacity:0.3; cursor:not-allowed; }
+
+  #btn-start{
+    grid-column:1 / -1;
+    color:#1a1200;
+    background:linear-gradient(180deg, #ffdd7a, var(--accent-gold));
+    box-shadow:0 6px 0 var(--accent-gold-dark);
+    font-size:clamp(18px,5vw,24px);
+    padding:22px 10px;
+  }
+  #btn-reveal{
+    color:#1a1200;
+    background:linear-gradient(180deg, #ffdd7a, var(--accent-gold));
+    box-shadow:0 6px 0 var(--accent-gold-dark);
+  }
+  #btn-next{
+    color:#062616;
+    background:linear-gradient(180deg, #5fe3a8, var(--correct-green));
+    box-shadow:0 6px 0 var(--correct-green-dark);
+  }
+  #btn-5050{
+    background:linear-gradient(180deg, #d3b8ff, var(--lifeline));
+    box-shadow:0 6px 0 var(--lifeline-dark);
+  }
+  #btn-addtime{
+    color:#062226;
+    background:linear-gradient(180deg, #a5f3fc, var(--addtime));
+    box-shadow:0 6px 0 var(--addtime-dark);
+  }
+  #btn-restart{
+    grid-column:1 / -1;
+    background:rgba(255,255,255,0.08);
+    border:2px solid var(--card-border);
+    box-shadow:none;
+    color:var(--text-main);
+  }
+  .rbtn:disabled{ box-shadow:none; }
+</style>
+</head>
+<body>
+
+  <div class="status-row">
+    <span class="status-dot" id="status-dot"></span>
+    <span id="status-text">Đang kết nối...</span>
+  </div>
+
+  <div class="info-card">
+    <div class="info-stage" id="info-stage">—</div>
+    <div class="info-main" id="info-main">Chưa có dữ liệu</div>
+    <div class="info-timer" id="info-timer"></div>
+  </div>
+
+  <div class="btn-grid">
+    <button class="rbtn" id="btn-start">BẮT ĐẦU</button>
+    <button class="rbtn" id="btn-5050">50:50</button>
+    <button class="rbtn" id="btn-addtime">+10 GIÂY</button>
+    <button class="rbtn" id="btn-reveal">HIỆN ĐÁP ÁN</button>
+    <button class="rbtn" id="btn-next">CÂU TIẾP THEO</button>
+    <button class="rbtn" id="btn-restart">VỀ MÀN HÌNH CHỜ</button>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  var statusDot = document.getElementById("status-dot");
+  var statusText = document.getElementById("status-text");
+  var infoStage = document.getElementById("info-stage");
+  var infoMain = document.getElementById("info-main");
+  var infoTimer = document.getElementById("info-timer");
+
+  var buttons = {
+    start: document.getElementById("btn-start"),
+    fifty: document.getElementById("btn-5050"),
+    addtime: document.getElementById("btn-addtime"),
+    reveal: document.getElementById("btn-reveal"),
+    next: document.getElementById("btn-next"),
+    restart: document.getElementById("btn-restart")
+  };
+
+  function setAllDisabled(disabled){
+    Object.keys(buttons).forEach(function(k){ buttons[k].disabled = disabled; });
+  }
+  setAllDisabled(true);
+
+  var ws = null;
+
+  function setStatus(text, ok){
+    statusText.textContent = text;
+    statusDot.classList.toggle("ok", !!ok);
+  }
+
+  function connect(){
+    var proto = location.protocol === "https:" ? "wss:" : "ws:";
+    ws = new WebSocket(proto + "//" + location.host + "/ws");
+
+    ws.addEventListener("open", function(){
+      setStatus("Đã kết nối", true);
+    });
+    ws.addEventListener("close", function(){
+      setStatus("Mất kết nối, đang thử lại...", false);
+      setAllDisabled(true);
+      setTimeout(connect, 1500);
+    });
+    ws.addEventListener("error", function(){
+      if(ws) ws.close();
+    });
+    ws.addEventListener("message", function(ev){
+      var msg;
+      try{ msg = JSON.parse(ev.data); }catch(e){ return; }
+      if(msg.type === "state") applyState(msg.state);
+    });
+  }
+
+  function send(action){
+    if(ws && ws.readyState === WebSocket.OPEN){
+      ws.send(JSON.stringify({ type:"cmd", action:action }));
+    }
+  }
+
+  buttons.start.addEventListener("click", function(){ send("start"); });
+  buttons.fifty.addEventListener("click", function(){ send("fifty"); });
+  buttons.addtime.addEventListener("click", function(){ send("addtime"); });
+  buttons.reveal.addEventListener("click", function(){ send("reveal"); });
+  buttons.next.addEventListener("click", function(){ send("next"); });
+  buttons.restart.addEventListener("click", function(){ send("restart"); });
+
+  function applyState(state){
+    if(state.screen === "welcome"){
+      infoStage.textContent = "MÀN HÌNH CHỜ";
+      infoMain.textContent = "Sẵn sàng bắt đầu";
+      infoTimer.textContent = "";
+      buttons.start.disabled = false;
+      buttons.fifty.disabled = true;
+      buttons.addtime.disabled = true;
+      buttons.reveal.disabled = true;
+      buttons.next.disabled = true;
+      buttons.restart.disabled = true;
+    } else if(state.screen === "question"){
+      infoStage.textContent = state.stage || "";
+      infoMain.textContent = "Câu " + (state.index+1) + "/" + state.total;
+      infoTimer.textContent = Math.max(0, state.timeLeft) + " giây còn lại";
+      buttons.start.disabled = true;
+      buttons.fifty.disabled = !!state.btn5050Disabled;
+      buttons.addtime.disabled = !!state.btnAddTimeDisabled;
+      buttons.reveal.disabled = !!state.btnRevealDisabled;
+      buttons.next.disabled = !!state.btnNextDisabled;
+      buttons.restart.disabled = false;
+    } else if(state.screen === "end"){
+      infoStage.textContent = "HOÀN THÀNH";
+      infoMain.textContent = "Đã kết thúc trò chơi!";
+      infoTimer.textContent = "";
+      buttons.start.disabled = true;
+      buttons.fifty.disabled = true;
+      buttons.addtime.disabled = true;
+      buttons.reveal.disabled = true;
+      buttons.next.disabled = true;
+      buttons.restart.disabled = false;
+    }
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>
