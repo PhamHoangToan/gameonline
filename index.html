@@ -124,6 +124,27 @@
     50%{ transform:scale(1.035); }
   }
 
+  .team-setup{
+    display:flex; gap:20px; flex-wrap:wrap; justify-content:center;
+    margin-top:8px;
+  }
+  .team-input-group{
+    display:flex; flex-direction:column; gap:6px; align-items:flex-start;
+  }
+  .team-input-group label{
+    font-size:clamp(12px,1.1vw,15px); font-weight:700; color:var(--text-dim);
+    letter-spacing:.05em; text-transform:uppercase;
+  }
+  .team-input-group input{
+    font-family:inherit; font-size:clamp(16px,1.8vw,22px); font-weight:700;
+    color:var(--text-main); background:rgba(255,255,255,0.08);
+    border:2px solid var(--card-border); border-radius:12px;
+    padding:.5em .9em; min-width:220px;
+    outline:none; transition:border-color .2s ease;
+  }
+  .team-input-group input:focus{ border-color:var(--accent-gold); }
+  .team-input-group input:disabled{ opacity:0.6; cursor:not-allowed; }
+
   /* ---------- QUESTION SCREEN ---------- */
   #question-screen{ align-items:stretch; justify-content:flex-start; padding-top:2.4vh; }
   .q-header{
@@ -152,6 +173,24 @@
     height:100%; width:100%; border-radius:999px;
     background:var(--correct-green);
     transition:width 1s linear, background-color .4s ease;
+  }
+
+  .scoreboard{
+    width:100%; max-width:1600px; margin:0 auto;
+    display:flex; justify-content:space-between; align-items:center; gap:16px;
+    padding:.6em 0 0;
+  }
+  .score-card{
+    display:flex; align-items:center; gap:.5em;
+    background:rgba(255,255,255,0.06); border:1px solid var(--card-border);
+    border-radius:999px; padding:.4em 1.1em;
+    font-weight:700; font-size:clamp(14px,1.4vw,20px);
+    max-width:48%;
+  }
+  .score-star{ font-size:1.1em; line-height:1; flex:0 0 auto; }
+  .score-count{ font-variant-numeric:tabular-nums; color:var(--accent-gold); font-weight:900; flex:0 0 auto; }
+  .score-name{
+    color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .timer-fill.warn{ background:var(--accent-gold); }
   .timer-fill.danger{ background:#ff5470; }
@@ -228,6 +267,34 @@
   .explanation.show{ opacity:1; transform:translateY(0); }
   .explanation .bulb{ font-size:1.3em; line-height:1; flex:0 0 auto; }
 
+  .team-award{
+    max-width:1600px; margin:0 auto; width:100%;
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:14px;
+    opacity:0; transform:translateY(10px); pointer-events:none;
+    transition:opacity .45s ease, transform .45s ease;
+  }
+  .team-award.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .team-award-label{
+    font-weight:700; color:var(--text-dim); font-size:clamp(13px,1.3vw,18px);
+  }
+  .team-award-buttons{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .award-btn{
+    font-family:inherit; font-weight:800; cursor:pointer;
+    font-size:clamp(13px,1.2vw,17px);
+    padding:.6em 1.4em; border-radius:12px; border:2px solid var(--card-border);
+    background:rgba(255,255,255,0.06); color:var(--text-main);
+    transition:transform .12s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
+  }
+  .award-btn:hover:not(:disabled){ background:rgba(255,255,255,0.12); }
+  .award-btn:active:not(:disabled){ transform:scale(0.96); }
+  .award-btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .award-btn.chosen{
+    border-color:var(--correct-green); background:rgba(39,194,129,0.18); color:var(--correct-green);
+  }
+  .award-btn-none.chosen{
+    border-color:var(--text-dim); background:rgba(169,189,224,0.15); color:var(--text-dim);
+  }
+
   .q-footer{
     width:100%; max-width:1600px; margin:0 auto;
     display:flex; justify-content:space-between; align-items:center; gap:16px;
@@ -291,6 +358,10 @@
     font-size:clamp(16px,1.9vw,26px); font-weight:500; color:var(--text-main);
     max-width:46ch; line-height:1.5;
   }
+  .end-winner{
+    font-size:clamp(18px,2.2vw,28px); font-weight:800; color:var(--accent-gold);
+    max-width:46ch;
+  }
   .btn-restart{
     margin-top:10px;
     font-family:inherit; font-weight:800; font-size:clamp(16px,1.6vw,24px);
@@ -329,6 +400,9 @@
     }
     .q-footer-actions{ display:contents; }
     .gv-btn{ width:100%; justify-content:center; }
+
+    .scoreboard{ gap:10px; }
+    .team-award-buttons{ gap:8px; }
   }
 
   /* ---------- MOBILE PHONE ---------- */
@@ -348,6 +422,16 @@
 
     .q-footer{ gap:8px; }
     .gv-btn{ padding:.7em 0.6em; font-size:clamp(12px,3.6vw,15px); }
+
+    .team-setup{ flex-direction:column; align-items:stretch; width:100%; }
+    .team-input-group{ width:100%; }
+    .team-input-group input{ width:100%; min-width:0; }
+
+    .scoreboard{ gap:6px; }
+    .score-card{ font-size:clamp(12px,3.5vw,16px); padding:.35em .8em; }
+
+    .team-award-buttons{ flex-direction:column; width:100%; }
+    .award-btn{ width:100%; }
   }
 
   @media (max-width:380px){
@@ -368,6 +452,16 @@
   <h1 class="welcome-title">AI LÀ TRIỆU PHÚ<br>PHIÊN BẢN INTERNET</h1>
   <p class="welcome-sub">Cùng giúp Minh trở thành người dùng internet thông minh</p>
   <p class="welcome-note">Trò chơi gồm 10 câu hỏi, chia làm 3 chặng độ khó tăng dần</p>
+  <div class="team-setup" id="team-setup">
+    <div class="team-input-group">
+      <label for="team-a-input">Tên đội 1</label>
+      <input type="text" id="team-a-input" maxlength="20" placeholder="Đội A" autocomplete="off">
+    </div>
+    <div class="team-input-group">
+      <label for="team-b-input">Tên đội 2</label>
+      <input type="text" id="team-b-input" maxlength="20" placeholder="Đội B" autocomplete="off">
+    </div>
+  </div>
   <button class="btn-start" id="btn-start">BẮT ĐẦU</button>
 </section>
 
@@ -384,6 +478,19 @@
     </div>
   </div>
 
+  <div class="scoreboard" id="scoreboard">
+    <div class="score-card" data-team="a">
+      <span class="score-star">⭐</span>
+      <span class="score-count" id="score-a-count">0</span>
+      <span class="score-name" id="score-a-name">Đội A</span>
+    </div>
+    <div class="score-card" data-team="b">
+      <span class="score-name" id="score-b-name">Đội B</span>
+      <span class="score-count" id="score-b-count">0</span>
+      <span class="score-star">⭐</span>
+    </div>
+  </div>
+
   <div class="q-body">
     <p class="q-text" id="q-text">Câu hỏi</p>
     <div class="answers-grid" id="answers-grid">
@@ -395,6 +502,14 @@
     <div class="explanation" id="explanation">
       <span class="bulb">💡</span>
       <span id="explanation-text"></span>
+    </div>
+    <div class="team-award" id="team-award">
+      <span class="team-award-label">Đội nào trả lời đúng?</span>
+      <div class="team-award-buttons">
+        <button class="award-btn" id="award-a" data-team="a">Đội A</button>
+        <button class="award-btn award-btn-none" id="award-none" data-team="none">KHÔNG ĐỘI NÀO</button>
+        <button class="award-btn" id="award-b" data-team="b">Đội B</button>
+      </div>
     </div>
   </div>
 
@@ -428,6 +543,7 @@
   </span>
   <h1 class="end-title">MINH ĐÃ TRỞ THÀNH<br>NGƯỜI DÙNG INTERNET THÔNG MINH!</h1>
   <p class="end-msg">Cảm ơn cả lớp đã giúp Minh! Bây giờ, cùng chuyển sang phần Thực hành để viết Hợp đồng số của chính mình nhé!</p>
+  <p class="end-winner" id="end-winner"></p>
   <button class="btn-restart" id="btn-restart">CHƠI LẠI</button>
 </section>
 
@@ -483,7 +599,14 @@
   var LETTERS = ["A","B","C","D"];
 
   /* ================= STATE ================= */
-  var state = { index:0, revealed:false, timerStarted:false, timeLeft:0, totalTime:0, timerId:null, extraTimeUsed:false };
+  var state = {
+    index:0, revealed:false, timerStarted:false, timeLeft:0, totalTime:0, timerId:null, extraTimeUsed:false,
+    awardedTo:null,
+    teams:{
+      a:{ name:"Đội A", stars:0 },
+      b:{ name:"Đội B", stars:0 }
+    }
+  };
 
   /* ================= DOM ================= */
   var screens = {
@@ -508,6 +631,18 @@
   var btnStart = document.getElementById("btn-start");
   var btnRestart = document.getElementById("btn-restart");
   var confettiLayer = document.getElementById("confetti-layer");
+
+  var teamAInput = document.getElementById("team-a-input");
+  var teamBInput = document.getElementById("team-b-input");
+  var scoreAName = document.getElementById("score-a-name");
+  var scoreBName = document.getElementById("score-b-name");
+  var scoreACount = document.getElementById("score-a-count");
+  var scoreBCount = document.getElementById("score-b-count");
+  var teamAwardEl = document.getElementById("team-award");
+  var awardA = document.getElementById("award-a");
+  var awardB = document.getElementById("award-b");
+  var awardNone = document.getElementById("award-none");
+  var endWinnerEl = document.getElementById("end-winner");
 
   function showScreen(name){
     Object.keys(screens).forEach(function(k){
@@ -613,12 +748,69 @@
   resizeCanvas();
   requestAnimationFrame(animateBg);
 
+  /* ================= TEAMS & SCORING ================= */
+  function getTeamName(key){
+    var input = key === "a" ? teamAInput : teamBInput;
+    var val = (input.value || "").trim();
+    return val || (key === "a" ? "Đội A" : "Đội B");
+  }
+
+  function applyTeamNamesFromInputs(){
+    state.teams.a.name = getTeamName("a");
+    state.teams.b.name = getTeamName("b");
+    updateScoreboardDisplay();
+  }
+
+  function updateScoreboardDisplay(){
+    scoreAName.textContent = state.teams.a.name;
+    scoreBName.textContent = state.teams.b.name;
+    scoreACount.textContent = state.teams.a.stars;
+    scoreBCount.textContent = state.teams.b.stars;
+    awardA.textContent = state.teams.a.name;
+    awardB.textContent = state.teams.b.name;
+  }
+
+  function resetTeamAwardUI(){
+    state.awardedTo = null;
+    teamAwardEl.classList.remove("show");
+    awardA.disabled = false;
+    awardB.disabled = false;
+    awardNone.disabled = false;
+    awardA.classList.remove("chosen");
+    awardB.classList.remove("chosen");
+    awardNone.classList.remove("chosen");
+  }
+
+  function awardTeam(which){
+    if(!state.revealed || state.awardedTo !== null) return;
+    if(which !== "a" && which !== "b" && which !== "none") return;
+    state.awardedTo = which;
+    if(which === "a") state.teams.a.stars++;
+    else if(which === "b") state.teams.b.stars++;
+    updateScoreboardDisplay();
+    awardA.disabled = true;
+    awardB.disabled = true;
+    awardNone.disabled = true;
+    if(which === "a") awardA.classList.add("chosen");
+    else if(which === "b") awardB.classList.add("chosen");
+    else awardNone.classList.add("chosen");
+    syncState();
+  }
+
+  function computeWinnerText(){
+    var a = state.teams.a, b = state.teams.b;
+    if(a.stars > b.stars) return a.name + " đã chiến thắng với " + a.stars + "⭐ (" + b.name + ": " + b.stars + "⭐)";
+    if(b.stars > a.stars) return b.name + " đã chiến thắng với " + b.stars + "⭐ (" + a.name + ": " + a.stars + "⭐)";
+    return a.name + " và " + b.name + " hòa nhau với " + a.stars + "⭐!";
+  }
+
   /* ================= GAME LOGIC ================= */
   function loadQuestion(i){
     var data = QUESTIONS[i];
     state.revealed = false;
     state.timerStarted = false;
     state.extraTimeUsed = false;
+    resetTeamAwardUI();
 
     qNumEl.textContent = "CÂU " + (i+1) + "/10";
     qStageEl.textContent = data.stage;
@@ -706,6 +898,7 @@
       else card.classList.add("dim");
     });
     explanationEl.classList.add("show");
+    teamAwardEl.classList.add("show");
     playCorrectChime();
 
     btnReveal.disabled = true;
@@ -745,6 +938,7 @@
     clearInterval(state.timerId);
     showScreen("end");
     launchConfetti();
+    endWinnerEl.textContent = computeWinnerText();
     syncState();
   }
 
@@ -752,6 +946,11 @@
     ensureAudio();
     state.index = 0;
     state.extraTimeUsed = false;
+    state.teams.a.stars = 0;
+    state.teams.b.stars = 0;
+    applyTeamNamesFromInputs();
+    teamAInput.disabled = true;
+    teamBInput.disabled = true;
     showScreen("question");
     loadQuestion(0);
   }
@@ -764,6 +963,9 @@
     state.index = 0;
     state.revealed = false;
     state.extraTimeUsed = false;
+    state.teams.a.stars = 0;
+    state.teams.b.stars = 0;
+    updateScoreboardDisplay();
     if(screens.welcome.classList.contains("active")) return;
     showScreen("question");
     loadQuestion(0);
@@ -775,6 +977,8 @@
     state.index = 0;
     state.revealed = false;
     state.extraTimeUsed = false;
+    teamAInput.disabled = false;
+    teamBInput.disabled = false;
     showScreen("welcome");
     syncState();
   }
@@ -808,6 +1012,11 @@
   btn5050.addEventListener("click", useFiftyFifty);
   btnAddTime.addEventListener("click", addExtraTime);
   btnRestart.addEventListener("click", backToWelcome);
+  awardA.addEventListener("click", function(){ awardTeam("a"); });
+  awardB.addEventListener("click", function(){ awardTeam("b"); });
+  awardNone.addEventListener("click", function(){ awardTeam("none"); });
+  teamAInput.addEventListener("input", function(){ applyTeamNamesFromInputs(); syncState(); });
+  teamBInput.addEventListener("input", function(){ applyTeamNamesFromInputs(); syncState(); });
 
   document.addEventListener("keydown", function(e){
     var key = e.key;
@@ -871,7 +1080,7 @@
       remoteWs.addEventListener("message", function(ev){
         var msg;
         try{ msg = JSON.parse(ev.data); }catch(e){ return; }
-        if(msg.type === "cmd") handleRemoteCommand(msg.action);
+        if(msg.type === "cmd") handleRemoteCommand(msg.action, msg.data);
       });
       remoteWs.addEventListener("close", function(){
         remoteWs = null;
@@ -906,14 +1115,14 @@
         }
         if(!msg || msg.ts === fbLastCmdTs) return;
         fbLastCmdTs = msg.ts;
-        handleRemoteCommand(msg.action);
+        handleRemoteCommand(msg.action, msg.data);
       });
       syncState();
     }catch(e){ fbCmdRef = null; fbStateRef = null; }
   }
 
   /* ---- Xu ly lenh & dong bo trang thai (dung chung cho ca 2 kenh) ---- */
-  function handleRemoteCommand(action){
+  function handleRemoteCommand(action, data){
     ensureAudio();
     if(action === "start"){
       if(screens.welcome.classList.contains("active")) startGame();
@@ -929,28 +1138,51 @@
       if(screens.question.classList.contains("active")) addExtraTime();
     } else if(action === "restart"){
       backToWelcome();
+    } else if(action === "setteamname"){
+      if(screens.welcome.classList.contains("active") && data && (data.team === "a" || data.team === "b")){
+        if(data.team === "a") teamAInput.value = data.name || "";
+        else teamBInput.value = data.name || "";
+        applyTeamNamesFromInputs();
+        syncState();
+      }
+    } else if(action === "award"){
+      if(screens.question.classList.contains("active") && data && data.which){
+        awardTeam(data.which);
+      }
     }
   }
 
   function buildSyncStateData(){
+    var data = {
+      teamAName: state.teams.a.name,
+      teamBName: state.teams.b.name,
+      teamAStars: state.teams.a.stars,
+      teamBStars: state.teams.b.stars
+    };
     if(screens.question.classList.contains("active")){
-      return {
-        screen: "question",
-        index: state.index,
-        total: QUESTIONS.length,
-        stage: QUESTIONS[state.index].stage,
-        timeLeft: state.timeLeft,
-        totalTime: state.totalTime,
-        timerStarted: state.timerStarted,
-        btnStartThinkDisabled: btnStartThink.disabled,
-        btnRevealDisabled: btnReveal.disabled,
-        btnNextDisabled: btnNext.disabled,
-        btn5050Disabled: btn5050.disabled,
-        btnAddTimeDisabled: btnAddTime.disabled
-      };
+      data.screen = "question";
+      data.index = state.index;
+      data.total = QUESTIONS.length;
+      data.stage = QUESTIONS[state.index].stage;
+      data.timeLeft = state.timeLeft;
+      data.totalTime = state.totalTime;
+      data.timerStarted = state.timerStarted;
+      data.btnStartThinkDisabled = btnStartThink.disabled;
+      data.btnRevealDisabled = btnReveal.disabled;
+      data.btnNextDisabled = btnNext.disabled;
+      data.btn5050Disabled = btn5050.disabled;
+      data.btnAddTimeDisabled = btnAddTime.disabled;
+      data.awardedTo = state.awardedTo;
+      data.awardDisabled = !state.revealed || state.awardedTo !== null;
+      return data;
     }
-    if(screens.end.classList.contains("active")) return { screen: "end" };
-    return { screen: "welcome" };
+    if(screens.end.classList.contains("active")){
+      data.screen = "end";
+      data.winnerText = computeWinnerText();
+      return data;
+    }
+    data.screen = "welcome";
+    return data;
   }
 
   function syncState(){
