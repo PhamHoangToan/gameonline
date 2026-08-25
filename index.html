@@ -408,7 +408,7 @@
         <svg class="wifi-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.6a9.4 9.4 0 000 18.8z" fill="currentColor"/></svg>
         50:50
       </button>
-      <button class="gv-btn" id="btn-addtime" title="Cộng thêm 10 giây, dùng 1 lần/ván (phím T)">
+      <button class="gv-btn" id="btn-addtime" title="Cộng thêm 10 giây, dùng 1 lần/câu (phím T)">
         <svg class="wifi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8.4"/><path d="M12 8.6V13l3 2"/><path d="M9.2 2.4h5.6"/></svg>
         +10s
       </button>
@@ -618,6 +618,7 @@
     var data = QUESTIONS[i];
     state.revealed = false;
     state.timerStarted = false;
+    state.extraTimeUsed = false;
 
     qNumEl.textContent = "CÂU " + (i+1) + "/10";
     qStageEl.textContent = data.stage;
