@@ -22,6 +22,8 @@
     --lifeline-dark:#6a3fd1;
     --addtime:#22d3ee;
     --addtime-dark:#0e7490;
+    --think:#38bdf8;
+    --think-dark:#0284c7;
     --card-border:rgba(255,255,255,0.16);
     --text-main:#f4f8ff;
     --text-dim:#a9bde0;
@@ -87,6 +89,12 @@
     font-size:clamp(18px,5vw,24px);
     padding:22px 10px;
   }
+  #btn-startthink{
+    grid-column:1 / -1;
+    color:#052033;
+    background:linear-gradient(180deg, #bae6fd, var(--think));
+    box-shadow:0 6px 0 var(--think-dark);
+  }
   #btn-reveal{
     color:#1a1200;
     background:linear-gradient(180deg, #ffdd7a, var(--accent-gold));
@@ -131,6 +139,7 @@
 
   <div class="btn-grid">
     <button class="rbtn" id="btn-start">BẮT ĐẦU</button>
+    <button class="rbtn" id="btn-startthink">BẮT ĐẦU SUY NGHĨ</button>
     <button class="rbtn" id="btn-5050">50:50</button>
     <button class="rbtn" id="btn-addtime">+10 GIÂY</button>
     <button class="rbtn" id="btn-reveal">HIỆN ĐÁP ÁN</button>
@@ -150,6 +159,7 @@
 
   var buttons = {
     start: document.getElementById("btn-start"),
+    startthink: document.getElementById("btn-startthink"),
     fifty: document.getElementById("btn-5050"),
     addtime: document.getElementById("btn-addtime"),
     reveal: document.getElementById("btn-reveal"),
@@ -240,6 +250,7 @@
   }
 
   buttons.start.addEventListener("click", function(){ send("start"); });
+  buttons.startthink.addEventListener("click", function(){ send("startthink"); });
   buttons.fifty.addEventListener("click", function(){ send("fifty"); });
   buttons.addtime.addEventListener("click", function(){ send("addtime"); });
   buttons.reveal.addEventListener("click", function(){ send("reveal"); });
@@ -252,6 +263,7 @@
       infoMain.textContent = "Sẵn sàng bắt đầu";
       infoTimer.textContent = "";
       buttons.start.disabled = false;
+      buttons.startthink.disabled = true;
       buttons.fifty.disabled = true;
       buttons.addtime.disabled = true;
       buttons.reveal.disabled = true;
@@ -260,8 +272,11 @@
     } else if(state.screen === "question"){
       infoStage.textContent = state.stage || "";
       infoMain.textContent = "Câu " + (state.index+1) + "/" + state.total;
-      infoTimer.textContent = Math.max(0, state.timeLeft) + " giây còn lại";
+      infoTimer.textContent = state.timerStarted
+        ? Math.max(0, state.timeLeft) + " giây còn lại"
+        : "Chưa bắt đầu tính giờ";
       buttons.start.disabled = true;
+      buttons.startthink.disabled = !!state.btnStartThinkDisabled;
       buttons.fifty.disabled = !!state.btn5050Disabled;
       buttons.addtime.disabled = !!state.btnAddTimeDisabled;
       buttons.reveal.disabled = !!state.btnRevealDisabled;
@@ -272,6 +287,7 @@
       infoMain.textContent = "Đã kết thúc trò chơi!";
       infoTimer.textContent = "";
       buttons.start.disabled = true;
+      buttons.startthink.disabled = true;
       buttons.fifty.disabled = true;
       buttons.addtime.disabled = true;
       buttons.reveal.disabled = true;

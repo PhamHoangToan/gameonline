@@ -32,6 +32,8 @@
     --lifeline-dark:#6a3fd1;
     --addtime:#22d3ee;
     --addtime-dark:#0e7490;
+    --think:#38bdf8;
+    --think-dark:#0284c7;
   }
 
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -230,8 +232,9 @@
     width:100%; max-width:1600px; margin:0 auto;
     display:flex; justify-content:space-between; align-items:center; gap:16px;
     padding-top:clamp(10px,1.6vh,20px);
+    flex-wrap:wrap;
   }
-  .q-footer-actions{ display:flex; gap:16px; }
+  .q-footer-actions{ display:flex; gap:16px; flex-wrap:wrap; }
   .gv-btn{
     font-family:inherit; font-weight:800; letter-spacing:.02em; cursor:pointer;
     font-size:clamp(15px,1.3vw,20px);
@@ -268,6 +271,14 @@
   }
   #btn-addtime:disabled{ box-shadow:0 6px 0 rgba(14,116,144,0.3); }
   #btn-addtime .wifi-icon{ width:1.15em; height:1.15em; }
+  #btn-startthink{
+    display:flex; align-items:center; gap:.55em;
+    color:#052033;
+    background:linear-gradient(180deg, #bae6fd, var(--think));
+    box-shadow:0 6px 0 var(--think-dark);
+  }
+  #btn-startthink:disabled{ box-shadow:0 6px 0 rgba(2,132,199,0.3); }
+  #btn-startthink .wifi-icon{ width:1.15em; height:1.15em; }
 
   /* ---------- END SCREEN ---------- */
   #end-screen{ text-align:center; gap:clamp(16px,2.2vh,28px); }
@@ -389,6 +400,10 @@
 
   <div class="q-footer">
     <div class="q-footer-actions">
+      <button class="gv-btn" id="btn-startthink" title="Bắt đầu tính giờ suy nghĩ (phím S)">
+        <svg class="wifi-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        BẮT ĐẦU SUY NGHĨ
+      </button>
       <button class="gv-btn" id="btn-5050" title="Loại bỏ 2 đáp án sai (phím F)">
         <svg class="wifi-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.6a9.4 9.4 0 000 18.8z" fill="currentColor"/></svg>
         50:50
@@ -468,7 +483,7 @@
   var LETTERS = ["A","B","C","D"];
 
   /* ================= STATE ================= */
-  var state = { index:0, revealed:false, timeLeft:0, totalTime:0, timerId:null, extraTimeUsed:false };
+  var state = { index:0, revealed:false, timerStarted:false, timeLeft:0, totalTime:0, timerId:null, extraTimeUsed:false };
 
   /* ================= DOM ================= */
   var screens = {
@@ -489,6 +504,7 @@
   var btnNext = document.getElementById("btn-next");
   var btn5050 = document.getElementById("btn-5050");
   var btnAddTime = document.getElementById("btn-addtime");
+  var btnStartThink = document.getElementById("btn-startthink");
   var btnStart = document.getElementById("btn-start");
   var btnRestart = document.getElementById("btn-restart");
   var confettiLayer = document.getElementById("confetti-layer");
@@ -601,6 +617,7 @@
   function loadQuestion(i){
     var data = QUESTIONS[i];
     state.revealed = false;
+    state.timerStarted = false;
 
     qNumEl.textContent = "CÂU " + (i+1) + "/10";
     qStageEl.textContent = data.stage;
@@ -614,12 +631,27 @@
     explanationEl.classList.remove("show");
     explanationTextEl.textContent = data.ex;
 
-    btnReveal.disabled = false;
+    clearInterval(state.timerId);
+    state.timeLeft = data.time;
+    state.totalTime = data.time;
+    updateTimerDisplay(state.timeLeft, state.totalTime);
+
+    btnStartThink.disabled = false;
+    btnReveal.disabled = true;
     btnNext.disabled = true;
     btn5050.disabled = false;
-    btnAddTime.disabled = state.extraTimeUsed;
+    btnAddTime.disabled = true;
 
-    startCountdown(data.time);
+    syncState();
+  }
+
+  function startThinking(){
+    if(state.revealed || state.timerStarted || btnStartThink.disabled) return;
+    state.timerStarted = true;
+    btnStartThink.disabled = true;
+    btnReveal.disabled = false;
+    btnAddTime.disabled = state.extraTimeUsed;
+    resumeCountdown();
     syncState();
   }
 
@@ -638,13 +670,6 @@
   function resumeCountdown(){
     clearInterval(state.timerId);
     state.timerId = setInterval(tickCountdown, 1000);
-  }
-
-  function startCountdown(seconds){
-    state.timeLeft = seconds;
-    state.totalTime = seconds;
-    updateTimerDisplay(state.timeLeft, state.totalTime);
-    resumeCountdown();
   }
 
   function addExtraTime(){
@@ -670,7 +695,7 @@
   }
 
   function revealAnswer(){
-    if(state.revealed) return;
+    if(state.revealed || !state.timerStarted) return;
     state.revealed = true;
     clearInterval(state.timerId);
 
@@ -776,6 +801,7 @@
 
   /* ================= EVENTS ================= */
   btnStart.addEventListener("click", startGame);
+  btnStartThink.addEventListener("click", startThinking);
   btnReveal.addEventListener("click", revealAnswer);
   btnNext.addEventListener("click", nextQuestion);
   btn5050.addEventListener("click", useFiftyFifty);
@@ -802,7 +828,8 @@
 
     if(screens.question.classList.contains("active")){
       if(key === " " || key === "Enter"){
-        if(!state.revealed) revealAnswer();
+        if(!state.timerStarted) startThinking();
+        else if(!state.revealed) revealAnswer();
         else nextQuestion();
       } else if(key === "ArrowRight"){
         if(state.revealed) nextQuestion();
@@ -810,6 +837,8 @@
         useFiftyFifty();
       } else if(key === "t" || key === "T"){
         addExtraTime();
+      } else if(key === "s" || key === "S"){
+        startThinking();
       }
       return;
     }
@@ -887,6 +916,8 @@
     ensureAudio();
     if(action === "start"){
       if(screens.welcome.classList.contains("active")) startGame();
+    } else if(action === "startthink"){
+      if(screens.question.classList.contains("active")) startThinking();
     } else if(action === "reveal"){
       if(screens.question.classList.contains("active")) revealAnswer();
     } else if(action === "next"){
@@ -909,6 +940,8 @@
         stage: QUESTIONS[state.index].stage,
         timeLeft: state.timeLeft,
         totalTime: state.totalTime,
+        timerStarted: state.timerStarted,
+        btnStartThinkDisabled: btnStartThink.disabled,
         btnRevealDisabled: btnReveal.disabled,
         btnNextDisabled: btnNext.disabled,
         btn5050Disabled: btn5050.disabled,
