@@ -51,9 +51,12 @@
   .screen{
     position:fixed; inset:0; z-index:5;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
+    justify-content:safe center;
     opacity:0; pointer-events:none;
     transition:opacity .55s ease;
     padding:3vh 4vw;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
   }
   .screen.active{ opacity:1; pointer-events:auto; }
 
@@ -293,6 +296,48 @@
   @media (max-height:620px){
     .q-text{ font-size:clamp(18px,2.6vw,32px); }
     .answer-text{ font-size:clamp(13px,1.3vw,18px); }
+  }
+
+  /* ---------- TABLET ---------- */
+  @media (max-width:900px){
+    .screen{ padding:2.6vh 4vw; }
+
+    .answers-grid{
+      grid-template-columns:1fr;
+      grid-template-rows:none;
+      gap:clamp(10px,1.6vh,18px);
+    }
+
+    .q-footer{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+    .q-footer-actions{ display:contents; }
+    .gv-btn{ width:100%; justify-content:center; }
+  }
+
+  /* ---------- MOBILE PHONE ---------- */
+  @media (max-width:560px){
+    .welcome-title{ max-width:16ch; }
+
+    .q-header{ gap:10px; }
+    .timer-box{ align-items:flex-end; }
+    .timer-track{ width:clamp(90px,30vw,160px); height:10px; }
+    .pill-tag{ padding:.45em 1em; }
+
+    .q-body{ gap:clamp(12px,2vh,22px); }
+    .answer-card{ padding:clamp(10px,1.6vh,18px) clamp(12px,3vw,20px); }
+    .answer-letter{ width:clamp(36px,9vw,46px); height:clamp(36px,9vw,46px); border-radius:10px; }
+
+    .explanation{ gap:10px; }
+
+    .q-footer{ gap:8px; }
+    .gv-btn{ padding:.7em 0.6em; font-size:clamp(12px,3.6vw,15px); }
+  }
+
+  @media (max-width:380px){
+    .q-footer{ grid-template-columns:1fr; }
   }
 </style>
 </head>
